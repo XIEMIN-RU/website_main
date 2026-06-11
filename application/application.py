@@ -4,6 +4,12 @@ from flask import Flask, render_template, request, make_response
 from flask_caching import Cache
 from config import TEMPLATES_PATH, TEXT_PATH
 from application.helpers import *
+import os
+from flask import request, jsonify
+from openai import OpenAI
+# 初始化 OpenAI 客戶端 (會自動讀取環境變數 OPENAI_API_KEY)
+client = OpenAI(api_key=os.environ.get("OPENAI_API_KEY"))
+
 
 
 app = Flask(__name__, template_folder=TEMPLATES_PATH)
@@ -44,15 +50,50 @@ def about():
     return render_template("about.html", content=content)
 
 
+# @app.route("/skills")
+# @cache.cached()
+# def skills():
+#     """Renders the 'Skills' page of the website."""
+
+#     skills = get_skills(f"{TEXT_PATH}/skills.json")
+
+#     return render_template("skills.html", skills=skills)
+
 @app.route("/skills")
-@cache.cached()
+# @cache.cached()  # 依你原本的設定保留
 def skills():
-    """Renders the 'Skills' page of the website."""
-
     skills = get_skills(f"{TEXT_PATH}/skills.json")
-
     return render_template("skills.html", skills=skills)
 
+# --- 新增這個對話專用的 API 路由 ---
+@app.route("/api/chat", methods=["POST"])
+def chat():
+    # 接收來自前端的資料
+    data = request.get_json()
+    user_message = data.get("message")
+
+    if not user_message:
+        return jsonify({"error": "請輸入訊息"}), 400
+
+    try:
+        # 呼叫 OpenAI API
+        response = client.chat.completions.create(
+            model="gpt-3.5-turbo", # 也可以換成 gpt-4o-mini，比較便宜且快速
+            messages=[
+                {"role": "system", "content": "你是一個放在我個人履歷網站上的 AI 助手，請用友善、簡潔的語氣回答問題。"},
+                {"role": "user", "content": user_message}
+            ]
+        )
+        
+        # 取得 AI 的回覆並傳回給前端
+        bot_reply = response.choices[0].message.content
+        return jsonify({"reply": bot_reply})
+        
+    except Exception as e:
+        # 捕捉錯誤避免伺服器崩潰
+        return jsonify({"error": str(e)}), 500
+
+--------------------------------------------------------
 
 @app.route("/portfolio")
 @cache.cached()
