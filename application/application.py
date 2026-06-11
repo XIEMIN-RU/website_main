@@ -78,7 +78,7 @@ def chat():
     try:
         # 呼叫 OpenAI API
         response = client.chat.completions.create(
-            model="gpt-3.5-turbo", # 也可以換成 gpt-4o-mini，比較便宜且快速
+            model="gpt-4.1-mini", # 也可以換成 gpt-4o-mini，比較便宜且快速
             messages=[
                 {"role": "system", "content": "你是一個放在我個人履歷網站上的 AI 助手，請用友善、簡潔的語氣回答問題。"},
                 {"role": "user", "content": user_message}
