@@ -1,10 +1,14 @@
-<!-- The 'Skills' page -->
-
 {% extends "layout.html" %}
 
 {% block head %}
-    <!-- Inherit from 'layout.html' -->
     {{ super() }}
+    <style>
+        /* 簡單的對話氣泡樣式 */
+        .chat-message { max-width: 80%; padding: 10px 15px; border-radius: 15px; display: inline-block; margin-bottom: 10px; }
+        .user-message { background-color: #0d6efd; color: white; float: right; border-bottom-right-radius: 0; }
+        .ai-message { background-color: #f1f0f0; color: #333; float: left; border-bottom-left-radius: 0; }
+        .clearfix::after { content: ""; clear: both; display: table; }
+    </style>
 {% endblock %}
 
 {% block title %}
@@ -12,85 +16,86 @@
 {% endblock %}
 
 {% block main %}
-    <!-- Background -->
     <img src="../static/images/trianglify_background.png" class="background position-fixed w-100 h-100 top-0 start-0" loading="lazy">
-    <!-- End of Background -->
-    <!-- Main Content -->
-    <div class="container skills mb-5 pb-5">
-        <!-- Title -->
-        <div class="row mb-3">
-            <div class="col-md-12 text-center">
-                <h1 class="page-title">SKILLS</h1>
+    
+    <div class="container skills mb-5 pb-5 position-relative">
+        <div class="row mt-5">
+            <div class="col-md-8 offset-md-2">
+                <div class="card card-design">
+                    <div class="card-body">
+                        <h5 class="card-title text-center mb-4">Chat with AI</h5>
+                        
+                        <div id="chat-history" class="p-3 mb-3 border rounded" style="height: 350px; overflow-y: auto; background-color: #ffffff;">
+                            <div class="clearfix">
+                                <div class="chat-message ai-message">你好！想問些什麼關於我技能的問題嗎？</div>
+                            </div>
+                        </div>
+
+                        <div class="input-group">
+                            <input type="text" id="chat-input" class="form-control" placeholder="輸入你想問的問題..." autocomplete="off">
+                            <button class="btn btn-primary" id="send-btn" type="button">送出</button>
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
-        <!-- End of Title -->
-        <!-- Cards -->
-        <div class="row">
-            <!-- Languages Card -->
-            <div class="col-md-4 d-flex align-items-stretch">
-                <div class="card languages-card card-design">
-                    <div class="card-body">
-                        <h5 class="card-title text-center mb-4">Languages</h5>
-                        <div class="row">
-                            {% for language in skills[0] %}
-                                <div class="col-md-4 mb-3">
-                                    <div class="card inner-card inner-card-design">
-                                        <img src="{{ language.image }}" class="img-fluid card-img-top mx-auto d-block mt-2">
-                                        <div class="card-body">
-                                            <h5 class="card-title text-center">{{ language.title }}</h5>
-                                        </div>
-                                    </div>
-                                </div>
-                            {% endfor %}
-                        </div>
-                    </div>
-                </div>
-            </div>
-            <!-- End of Languages Card -->
-            <!-- Frameworks & Libraries Card -->
-            <div class="col-md-4 d-flex align-items-stretch my-3 my-md-0">
-                <div class="card frameworks-card card-design flex-fill">
-                    <div class="card-body">
-                        <h5 class="card-title text-center mb-4">Frameworks & Libraries</h5>
-                        <div class="row">
-                            {% for framework in skills[1] %}
-                                <div class="col-md-4 mb-3">
-                                    <div class="card inner-card inner-card-design">
-                                        <img src="{{ framework.image }}" class="img-fluid card-img-top mx-auto d-block mt-2">
-                                        <div class="card-body">
-                                            <h5 class="card-title text-center">{{ framework.title }}</h5> 
-                                        </div>
-                                    </div>
-                                </div>
-                            {% endfor %}
-                        </div>
-                    </div>
-                </div>
-            </div>
-            <!-- End of Frameworks & Libraries Card -->
-            <!-- Other Technologies Card -->
-            <div class="col-md-4 d-flex align-items-stretch">
-                <div class="card technologies-card card-design">
-                    <div class="card-body">
-                        <h5 class="card-title text-center mb-4">Other Technologies</h5>
-                        <div class="row">
-                            {% for technology in skills[2] %}
-                                <div class="col-md-4 mb-3">
-                                    <div class="card inner-card inner-card-design">
-                                        <img src="{{ technology.image }}" class="img-fluid card-img-top mx-auto d-block mt-2">
-                                        <div class="card-body">
-                                            <h5 class="card-title text-center">{{ technology.title }}</h5>
-                                        </div>
-                                    </div>
-                                </div>
-                            {% endfor %}
-                        </div>
-                    </div>
-                </div>
-            </div>
-            <!-- End of Other Technologies Card -->
         </div>
-        <!-- End of Cards -->
-    </div>
-    <!-- End of Main Content -->
+
+    <script>
+        const sendBtn = document.getElementById('send-btn');
+        const chatInput = document.getElementById('chat-input');
+        const chatHistory = document.getElementById('chat-history');
+
+        // 綁定點擊事件與 Enter 鍵
+        sendBtn.addEventListener('click', sendMessage);
+        chatInput.addEventListener('keypress', function (e) {
+            if (e.key === 'Enter') sendMessage();
+        });
+
+        async function sendMessage() {
+            const message = chatInput.value.trim();
+            if (!message) return;
+
+            // 1. 在畫面上顯示使用者的訊息
+            appendMessage(message, 'user-message');
+            chatInput.value = '';
+
+            // 2. 顯示 loading 狀態
+            const loadingId = 'loading-' + Date.now();
+            appendMessage('AI 正在思考...', 'ai-message', loadingId);
+
+            // 3. 發送請求到後端 Flask API
+            try {
+                const response = await fetch('/api/chat', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ message: message })
+                });
+                
+                const data = await response.json();
+                
+                // 移除 loading 狀態並顯示 AI 回覆
+                document.getElementById(loadingId).closest('.clearfix').remove();
+                
+                if (response.ok) {
+                    appendMessage(data.reply, 'ai-message');
+                } else {
+                    appendMessage('發生錯誤：' + (data.error || '無法取得回應'), 'ai-message');
+                }
+            } catch (error) {
+                document.getElementById(loadingId).closest('.clearfix').remove();
+                appendMessage('網路錯誤，請稍後再試。', 'ai-message');
+            }
+        }
+
+        // 將對話加入畫面的輔助函式
+        function appendMessage(text, className, id = null) {
+            const div = document.createElement('div');
+            div.className = 'clearfix';
+            div.innerHTML = `<div class="chat-message ${className}" ${id ? `id="${id}"` : ''}>${text}</div>`;
+            chatHistory.appendChild(div);
+            // 自動滾動到底部
+            chatHistory.scrollTop = chatHistory.scrollHeight;
+        }
+    </script>
 {% endblock %}
