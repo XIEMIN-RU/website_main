@@ -1,10 +1,32 @@
-<!-- The 'About' page -->
-
 {% extends "layout.html" %}
 
 {% block head %}
-    <!-- Inherit from 'layout.html' -->
     {{ super() }}
+    <style>
+        .chat-window {
+            width: 350px;
+            height: 450px;
+            bottom: 80px;
+            right: 25px;
+            transition: all 0.3s ease-in-out;
+            opacity: 0;
+            visibility: hidden;
+            transform: translateY(20px);
+        }
+        .chat-window.show {
+            opacity: 1;
+            visibility: visible;
+            transform: translateY(0);
+        }
+        .chat-messages {
+            height: 300px;
+            overflow-y: auto;
+        }
+        .chat-message-bubble {
+            max-width: 80%;
+            border-radius: 15px;
+        }
+    </style>
 {% endblock %}
 
 {% block title %}
@@ -12,21 +34,14 @@
 {% endblock %}
 
 {% block main %}
-    <!-- Background -->
     <img src="../static/images/trianglify_background.png" class="background position-fixed w-100 h-100 top-0 start-0" loading="lazy">
-    <!-- End of Background -->
-    <!-- Main Content -->
     <div class="container about mb-5 pb-5">
-        <!-- Title -->
         <div class="row mb-3">
             <div class="col-md-12 text-center">
                 <h1 class="page-title">ABOUT ME</h1>
             </div>
         </div>
-        <!-- End of Title -->
-        <!-- Row -->
         <div class="row flex-wrap align-content-center justify-content-center">
-            <!-- 1st Column -->
             <div class="col-md-6 d-flex">
                 <div class="card description-card card-design">
                     <div class="card-body">
@@ -45,8 +60,6 @@
                     </div>
                 </div>
             </div>
-            <!-- End of 1st Column -->
-            <!-- 2nd Column -->
             <div class="col-md-3 mt-md-0 mt-4 d-flex">
                 <div class="card education-card card-design flex-grow-1">
                     <div class="card-body d-flex flex-column align-items-center">
@@ -75,9 +88,95 @@
                     </div>
                 </div>
             </div>
-            <!-- End of 2nd Column -->
+            </div>
         </div>
-        <!-- End of Row -->
+    <div class="position-fixed bottom-0 end-0 p-4" style="z-index: 1050;">
+        
+        <div id="chatWindow" class="card shadow chat-window position-absolute">
+            <div class="card-header bg-dark text-white d-flex justify-content-between align-items-center">
+                <h6 class="mb-0"><i class="bx bx-message-rounded-dots me-2"></i>Let's Chat</h6>
+                <button type="button" class="btn-close btn-close-white" id="closeChatBtn" aria-label="Close"></button>
+            </div>
+            
+            <div class="card-body chat-messages bg-light d-flex flex-column" id="chatBox">
+                <div class="d-flex justify-content-start mb-3">
+                    <div class="chat-message-bubble bg-white text-dark p-2 shadow-sm border">
+                        Hello! How can I help you today?
+                    </div>
+                </div>
+                </div>
+            
+            <div class="card-footer bg-white">
+                <div class="input-group">
+                    <input type="text" id="chatInput" class="form-control border-secondary" placeholder="Type a message..." autocomplete="off">
+                    <button class="btn btn-dark" id="sendBtn" type="button">
+                        <i class="bx bx-send"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <button id="chatToggleBtn" class="btn btn-dark rounded-circle shadow d-flex align-items-center justify-content-center" style="width: 60px; height: 60px;">
+            <i class="bx bx-message-rounded-dots fs-2"></i>
+        </button>
     </div>
-    <!-- End of Main Content -->
+    <script>
+        document.addEventListener("DOMContentLoaded", function() {
+            const chatToggleBtn = document.getElementById("chatToggleBtn");
+            const closeChatBtn = document.getElementById("closeChatBtn");
+            const chatWindow = document.getElementById("chatWindow");
+            
+            const chatInput = document.getElementById("chatInput");
+            const sendBtn = document.getElementById("sendBtn");
+            const chatBox = document.getElementById("chatBox");
+
+            // 打開/關閉聊天視窗
+            function toggleChat() {
+                chatWindow.classList.toggle("show");
+            }
+
+            chatToggleBtn.addEventListener("click", toggleChat);
+            closeChatBtn.addEventListener("click", toggleChat);
+
+            // 【保留給後端串接用】發送訊息的邏輯
+            function sendMessage() {
+                const message = chatInput.value.trim();
+                if (message !== "") {
+                    // 1. 將使用者的訊息顯示到畫面上
+                    const userMsgHtml = `
+                        <div class="d-flex justify-content-end mb-3">
+                            <div class="chat-message-bubble bg-dark text-white p-2 shadow-sm">
+                                ${message}
+                            </div>
+                        </div>
+                    `;
+                    chatBox.insertAdjacentHTML("beforeend", userMsgHtml);
+                    
+                    // 清空輸入框並滾動到底部
+                    chatInput.value = "";
+                    chatBox.scrollTop = chatBox.scrollHeight;
+
+                    // ----------------------------------------------------
+                    // 2. 在這裡加入您的 Fetch API / WebSocket 程式碼來傳遞給後端
+                    // 例如:
+                    // fetch('/api/chat', {
+                    //     method: 'POST',
+                    //     headers: { 'Content-Type': 'application/json' },
+                    //     body: JSON.stringify({ message: message })
+                    // }).then(res => res.json()).then(data => {
+                    //      // 將後端回傳的訊息顯示到畫面上
+                    // });
+                    // ----------------------------------------------------
+                }
+            }
+
+            // 綁定發送按鈕與 Enter 鍵
+            sendBtn.addEventListener("click", sendMessage);
+            chatInput.addEventListener("keypress", function(e) {
+                if (e.key === "Enter") {
+                    sendMessage();
+                }
+            });
+        });
+    </script>
 {% endblock %}
