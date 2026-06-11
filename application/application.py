@@ -93,7 +93,7 @@ def chat():
         # 捕捉錯誤避免伺服器崩潰
         return jsonify({"error": str(e)}), 500
 
---------------------------------------------------------
+
 
 @app.route("/portfolio")
 @cache.cached()
